@@ -1,0 +1,15 @@
+Predictive maintenance based on anomaly detection using deep learning for air production unit in the railway industry
+
+Abstract:
+Predictive maintenance methods assist early detection of failures and errors in machinery before they reach critical stages. 
+This study proposes a data-driven predictive maintenance framework for the air production unit (APU) system of a train of
+Metro do Porto by deep learning based on a sparse autoencoder (SAE) network that efficiently detects abnormal data and considerably
+reduces the false alarm rate. Several analog and digital sensors installed on the APU system allow the detection of behavioral changes
+and deviations from the normal pattern by analyzing the collected data. We implemented two versions of the SAE network in which we
+inputted analog sensors data and digital sensors data, and the experimental results show that the failures due to air leakage problems
+are predicted by analog sensors data while other types of failures are identified by digital sensors data. A low pass filter is applied
+to the output of the SAE network, and a sequence of abnormal data is used as an alarm for the APU system failure. Performance indicators
+of the SAE network with digital sensors data, in terms of F1 Score, Recall, and Precision, are respectively, about 33.6%, 42%,
+and 28% better than those of the SAE network with analog sensors data. For comparison purposes, we also implemented a variational
+autoencoder (VAE). The results show that SAE performance is better than that of VAE by 14%, 77%, and 37% respectively, for Recall,
+Precision and F1 Score.
