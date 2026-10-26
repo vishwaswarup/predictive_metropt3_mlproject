@@ -13,6 +13,7 @@ OUTPUT_DIR = PROJECT_ROOT / "outputs"
 MODEL_DIR = OUTPUT_DIR / "models"
 PLOT_DIR = OUTPUT_DIR / "plots"
 REPORT_DIR = OUTPUT_DIR / "reports"
+CACHE_DIR = OUTPUT_DIR / "cache"     # derived data (feature tables); git-ignored, safe to delete
 RAW_CSV_GLOB = "MetroPT3*.csv"
 
 # --------------------------------------------------------------------------- schema
@@ -74,6 +75,14 @@ XGB_PARAMS = {
     "colsample_bytree": 0.8,
 }
 CLASSIFIER_THRESHOLD = 0.5
+FEATURE_STATS = ["mean", "std", "min", "max", "skew"]   # per-feature window aggregates fed to the classifier
+SHAP_SAMPLE_PER_CLASS = 2500         # windows per class used to compute SHAP values
+LOOKAHEAD_SWEEP_HOURS = [1, 3, 6, 12, 24]   # lookahead horizons compared by `classifier --sweep`
+ALARM_MIN_CONSECUTIVE = 5            # an alarm needs this many consecutive windows >= threshold (5 min at 1-min stride)
+BASELINE_HOURS = 24                  # drift features: compare each window with the median of the preceding N hours
+TREND_HOURS = [1, 6]                 # drift features: change vs the mean of the preceding N hours
+BASELINE_MIN_WINDOWS = 30            # minimum past windows needed to form a baseline (else NaN)
+SHAP_TOP_K = 20                      # features shown in the SHAP importance chart
 
 # --------------------------------------------------------------------------- RUL
 MAX_RUL = 72                         # PLACEHOLDER: hours; RUL is capped here (piecewise linear)
