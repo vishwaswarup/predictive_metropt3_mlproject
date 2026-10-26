@@ -54,7 +54,7 @@ VAL_FRACTION = 0.2             # remaining chronological share, used for validat
 # --------------------------------------------------------------------------- autoencoder
 ANOMALY_THRESHOLD_MULTIPLIER = 3.0   # threshold = mean + k * std of training reconstruction error
 LSTM_UNITS = [64, 32]                # encoder LSTM widths (decoder mirrors)
-LSTM_EPOCHS = 30
+LSTM_EPOCHS = 80
 BATCH_SIZE = 256
 LEARNING_RATE = 1e-3
 EARLY_STOPPING_PATIENCE = 5
