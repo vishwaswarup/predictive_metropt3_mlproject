@@ -90,6 +90,15 @@
  </div>
  <h3>Failure inspector</h3>
  <div class="panel"><div class="tabs" id="tabs" role="group" aria-label="Select failure"></div><div class="legend" id="lg2"></div><div id="zoomScore"></div><div id="zoomRul"></div><p class="note" id="zoomNote"></p></div>
+ <h3>Comparison with published work</h3>
+ <p>The dataset comes with a reference paper (Davari et al., IEEE DSAA 2021) that detects faults with a sparse autoencoder. We could not read its results. A later paper, <a href="https://sol.sbc.org.br/index.php/eniac/article/view/25728" target="_blank" rel="noopener">Decision Threshold Selection and Low-Pass Filter Application for Anomaly Detection with Sparse Autoencoder</a> (ENIAC), re-implemented that method on the same data and reports absolute numbers.</p>
+ <div class="panel"><div class="scroll"><table id="cmpT">
+  <tr><th>Method</th><th>Recall</th><th>False-positive rate</th><th>Precision</th><th>F1</th></tr>
+  <tr><td>Sparse autoencoder, filter on the classification (ENIAC)</td><td class="m">8–24%</td><td class="m">0.8–4.3%</td><td class="m">13–21%</td><td class="m">11–17%</td></tr>
+  <tr><td>Sparse autoencoder, filter on the score, Box and Perc thresholds (ENIAC)</td><td class="m">53–70%</td><td class="m">21–27%</td><td class="m">6–7%</td><td class="m">11–12%</td></tr>
+  <tr><td><b>CompressorWatch</b> LSTM autoencoder</td><td class="m pos">100%</td><td class="m">20.3%</td><td class="m">13.7%</td><td class="m pos">24.2%</td></tr>
+ </table></div>
+ <p class="note">Read this as the same ballpark, not a win. The ENIAC numbers score individual compressor cycles from March to July against the dataset authors' labels, with thresholds tuned to maximise F1. Ours score 10-minute windows from 15 April to August against the four documented failure periods, with a fixed mean + 3σ threshold. The two evaluations are different, so the numbers are not directly comparable. A fair comparison would run the sparse autoencoder with its low-pass filter on our splits.</p></div>
 </section>
 
 <section class="s" id="alerts">
@@ -161,6 +170,7 @@
  <h2>References</h2>
  <p class="ref"><b>Predictive maintenance based on anomaly detection using deep learning for air production unit in the railway industry.</b><br>
  Study of the APU of a Metro do Porto train using a sparse autoencoder (SAE) on analogue and digital sensors, with a low-pass filter on the output and a variational autoencoder for comparison. Reported SAE results beat the VAE by 14% (recall), 77% (precision) and 37% (F1). Abstract held in the repository at <span class="mono">docs/researchpaper.txt</span>.</p>
+ <p class="ref"><b>Decision Threshold Selection and Low-Pass Filter Application for Anomaly Detection with Sparse Autoencoder.</b> ENIAC. Re-implements the sparse autoencoder of the paper above on MetroPT-3 and reports recall, precision, F1 and false-positive rate. <a href="https://sol.sbc.org.br/index.php/eniac/article/view/25728" target="_blank" rel="noopener">sol.sbc.org.br</a></p>
  <p class="ref"><b>MetroPT-3 Dataset.</b> UCI Machine Learning Repository, dataset 791. <a href="https://archive.ics.uci.edu/dataset/791/metropt+3+dataset" target="_blank" rel="noopener">archive.ics.uci.edu/dataset/791</a></p>
  <h3>Reproducing</h3>
  <p>Code, configuration and saved models are in the project repository. Every threshold and hyperparameter is in <span class="mono">config.py</span>. Train the detector with <span class="mono">python -m src.models.autoencoder</span> and run the rest with <span class="mono">python main.py</span>.</p>
