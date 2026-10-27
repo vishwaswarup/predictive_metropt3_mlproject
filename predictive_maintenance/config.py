@@ -94,12 +94,24 @@ RUL_MODEL_PARAMS = {
 }
 
 # --------------------------------------------------------------------------- maintenance scheduler
-# PLACEHOLDER thresholds; refined when the scheduler is built.
-SCHED_ANOMALY_WATCH = 1.0            # anomaly score (error / threshold) above which to WATCH
-SCHED_PROB_SCHEDULE = 0.5
-SCHED_PROB_URGENT = 0.8
-SCHED_RUL_SCHEDULE_HOURS = 48
-SCHED_RUL_URGENT_HOURS = 12
+# The autoencoder anomaly flag is the only validated signal (it flags ~100% of in-failure windows, but its score
+# magnitude does not rank severity: in-failure scores sit at 1.2-1.5x threshold). So the scheduler escalates on how
+# long the anomaly PERSISTS; classifier probability and RUL only corroborate an already-active anomaly (they showed
+# no skill under leave-one-failure-out) and can never raise the level on their own.
+SCHED_ANOMALY_WATCH = 1.0            # anomaly score (error / threshold) at or above which a window counts as anomalous
+SCHED_MIN_CONSECUTIVE = 5            # consecutive anomalous windows before the anomaly counts as active (reuses stride: 5 min)
+SCHED_PERSIST_LIKELY_MIN = 60        # anomaly active this long (minutes) -> likelihood "likely"
+SCHED_PERSIST_CERTAIN_MIN = 240      # ... this long -> likelihood "almost certain"
+SCHED_USE_CORROBORATION = False      # measured: corroboration raised false SCHEDULE+ episodes 34 -> 150 for no lead-time gain, so it is off
+SCHED_PROB_SCHEDULE = 0.5            # classifier probability that corroborates an active anomaly (+1 likelihood)
+SCHED_RUL_SCHEDULE_HOURS = 48        # predicted RUL at or below which an active anomaly is corroborated (+1 likelihood)
+SCHED_CONSEQUENCE = 2                # consequence of an air-leak failure: 1 minor, 2 major (service disruption), 3 critical
+SCHED_RISK_WATCH = 1                 # risk = likelihood (0-3) x consequence (1-3); thresholds for each level
+SCHED_RISK_SCHEDULE = 3
+SCHED_RISK_URGENT = 6
+SCHED_LEVELS = ["NORMAL", "WATCH", "SCHEDULE_MAINTENANCE", "URGENT"]
+SCHED_LIKELIHOOD_LABELS = ["none", "possible", "likely", "almost certain"]
+SCHED_CONSEQUENCE_LABELS = {1: "minor", 2: "major", 3: "critical"}
 
 # --------------------------------------------------------------------------- reproducibility
 RANDOM_SEED = 42
