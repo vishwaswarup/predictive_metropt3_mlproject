@@ -22,7 +22,7 @@ import config as C
 
 LEVELS = C.SCHED_LEVELS
 CAVEAT = ("failure probability and RUL showed no skill in leave-one-failure-out validation; "
-          "they are used only to corroborate an active anomaly")
+          "they can only corroborate an active anomaly, and that is off by default (SCHED_USE_CORROBORATION)")
 
 
 @dataclass(frozen=True)

@@ -4,21 +4,24 @@ Modular, interpretable pipeline for the metro Air Production Unit (compressor), 
 [MetroPT-3 dataset](https://archive.ics.uci.edu/dataset/791/metropt+3+dataset):
 
 1. **Anomaly detection** – LSTM autoencoder, trained only on pre-failure normal data
-2. **Failure prediction** – XGBoost + SHAP *(planned)*
-3. **RUL estimation** – piecewise-linear degradation target *(planned)*
-4. **Maintenance decisions** – rule-based scheduler with a risk matrix *(planned)*
+2. **Failure prediction** – XGBoost + SHAP
+3. **RUL estimation** – piecewise-linear degradation target, gradient boosting
+4. **Maintenance decisions** – rule-based scheduler with a likelihood x consequence risk matrix
 
-## Status
+## Status and honest results
 
-| Step | Module | State |
+| Step | Module | State / finding |
 |---|---|---|
 | 1 | EDA, config | done (`notebooks/01_eda.ipynb`) |
 | 2 | `src/data/loader.py`, `preprocessor.py` | done |
-| 3 | `src/models/autoencoder.py` | written, trained, under review |
-| 4 | `src/models/classifier.py` | not started |
-| 5 | `src/models/rul_estimator.py` | not started |
-| 6 | `src/maintenance/scheduler.py` | not started |
-| 7 | `src/visualization/dashboard.py`, `main.py` | not started |
+| 3 | `src/models/autoencoder.py` | works as a detector: flags ~100% of in-failure windows; weak early warning; ~21% false-positive rate (drift) |
+| 4 | `src/models/classifier.py` | **negative result**: leave-one-failure-out AUC 0.53 (chance); SHAP importances are not physical causes |
+| 5 | `src/models/rul_estimator.py` | **no skill**: MAE 19.7 h vs 17.4 h for a constant predictor |
+| 6 | `src/maintenance/scheduler.py` | anomaly-persistence driven; classifier/RUL corroboration off by default (it increased false alarms) |
+| 7 | `src/visualization/dashboard.py`, `main.py` | done; writes `outputs/plots/dashboard.html` |
+
+Only the anomaly detector is validated. The scheduler reaches SCHEDULE_MAINTENANCE/URGENT mostly after a failure
+has started (F1 is the exception, ~13 h ahead) and raises false alarms during drift periods.
 
 ## Setup
 
@@ -37,6 +40,10 @@ Run each module from this folder; each has a `__main__` self-test:
     .venv/bin/python -m src.data.loader
     .venv/bin/python -m src.data.preprocessor
     .venv/bin/python -m src.models.autoencoder     # reuses outputs/models/autoencoder.keras if present
+    .venv/bin/python -m src.models.classifier
+    .venv/bin/python -m src.models.rul_estimator
+    .venv/bin/python -m src.maintenance.scheduler
+    .venv/bin/python main.py                       # everything after training, plus the dashboard
 
 All hyperparameters, paths, split dates and thresholds live in `config.py`.
 
@@ -55,7 +62,7 @@ All hyperparameters, paths, split dates and thresholds live in `config.py`.
     docs/                reference paper abstract
     notebooks/           01_eda.ipynb
     src/data/            loader, preprocessor
-    src/models/          autoencoder (classifier, rul_estimator to come)
-    src/maintenance/     scheduler (to come)
-    src/visualization/   dashboard (to come)
+    src/models/          autoencoder, classifier, rul_estimator
+    src/maintenance/     scheduler
+    src/visualization/   dashboard
     outputs/models|plots|reports/   saved models, figures, metrics

@@ -1,0 +1,3 @@
+{
+  "caveat": "failure probability and RUL showed no skill in leave-one-failure-out validation; they are used only to corroborate an active anomaly"
+}
