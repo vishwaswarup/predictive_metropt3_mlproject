@@ -1,29 +1,25 @@
 # CompressorWatch
 
-Predictive maintenance for the MetroPT-3 metro air compressor.
+Fault detection for the MetroPT-3 metro air compressor. An LSTM autoencoder learns normal behaviour from
+healthy history and raises a graded alert (WATCH / SCHEDULE / URGENT) when the sensors stop looking normal.
+Dataset: [MetroPT-3](https://archive.ics.uci.edu/dataset/791/metropt+3+dataset). Author: Vishwaswarup Rath.
 
-Modular, interpretable pipeline for the metro Air Production Unit (compressor), built on the
-[MetroPT-3 dataset](https://archive.ics.uci.edu/dataset/791/metropt+3+dataset):
+## What works and what does not
 
-1. **Anomaly detection** – LSTM autoencoder, trained only on pre-failure normal data
-2. **Failure prediction** – XGBoost + SHAP
-3. **RUL estimation** – piecewise-linear degradation target, gradient boosting
-4. **Maintenance decisions** – rule-based scheduler with a likelihood x consequence risk matrix
-
-## Status and honest results
-
-| Step | Module | State / finding |
+| Part | Module | Result |
 |---|---|---|
-| 1 | EDA, config | done (`notebooks/01_eda.ipynb`) |
-| 2 | `src/data/loader.py`, `preprocessor.py` | done |
-| 3 | `src/models/autoencoder.py` | works as a detector: flags ~100% of in-failure windows; weak early warning; ~21% false-positive rate (drift) |
-| 4 | `src/models/classifier.py` | **negative result**: leave-one-failure-out AUC 0.53 (chance); SHAP importances are not physical causes |
-| 5 | `src/models/rul_estimator.py` | **no skill**: MAE 19.7 h vs 17.4 h for a constant predictor |
-| 6 | `src/maintenance/scheduler.py` | anomaly-persistence driven; classifier/RUL corroboration off by default (it increased false alarms) |
-| 7 | `src/visualization/dashboard.py`, `main.py` | done; writes `outputs/plots/dashboard.html` |
+| Fault detection | `src/models/autoencoder.py` | **Works.** 99.6% of windows during the four documented failures sit above NORMAL. ~20% of healthy windows do too (mostly drift in August). |
+| Alert levels | `src/maintenance/scheduler.py` | Rules on how long the anomaly persists. Alerts fire at or after the logged failure start, except F1 (~13.6 h earlier). |
+| Failure prediction | `src/models/classifier.py` | **Dropped.** Leave-one-failure-out ROC-AUC 0.53 (chance). Kept as a documented negative result. |
+| Remaining life | `src/models/rul_estimator.py` | **Dropped.** MAE 19.7 h vs 17.4 h for a constant guess. Kept as a documented negative result. |
 
-Only the anomaly detector is validated. The scheduler reaches SCHEDULE_MAINTENANCE/URGENT mostly after a failure
-has started (F1 is the exception, ~13 h ahead) and raises false alarms during drift periods.
+CompressorWatch is a fault alarm, not a predictor. The full write-up is the report site in `site/`
+(static HTML, deployable on Vercel with Root Directory `predictive_maintenance/site`).
+
+## Next steps
+
+Per-sensor explanations for each alert, a drift fix to reduce false alarms, a stuck-sensor check,
+and a comparison against a plain threshold rule.
 
 ## Setup
 

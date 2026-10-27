@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>CompressorWatch — Predictive Maintenance Report</title>
-<meta name="description" content="CompressorWatch: report on anomaly detection, failure prediction, RUL estimation and maintenance scheduling for a metro air compressor, with honest validation results.">
+<title>CompressorWatch — Fault Detection Report</title>
+<meta name="description" content="CompressorWatch: fault detection for a metro air compressor, with honest results on what worked and what did not.">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Sans+Condensed:wght@600&display=swap">
 <link rel="stylesheet" href="style.css">
@@ -15,45 +15,45 @@
  <span class="brand">CompressorWatch</span>
  <b>Contents</b>
  <a href="#summary">Summary</a><a href="#problem">1 Problem</a><a href="#dataset">2 Dataset</a><a href="#method">3 Method</a>
- <a href="#results">4 Results</a><a href="#scheduler">5 Scheduler</a><a href="#discussion">6 Discussion</a><a href="#conclusion">7 Conclusion</a><a href="#refs">References</a>
+ <a href="#results">4 Results</a><a href="#alerts">5 Alerting</a><a href="#tried">6 What did not work</a><a href="#next">7 Next steps</a><a href="#conclusion">8 Conclusion</a><a href="#refs">References</a>
 </nav>
 <main>
 
 <div class="hero" id="summary">
  <div class="eyebrow">CompressorWatch · Project report · By Vishwaswarup Rath</div>
- <h1>Predicting failures of a metro air compressor, and what the data would not let us predict</h1>
- <p class="lede">We built a four-stage pipeline on the MetroPT-3 dataset: anomaly detection, failure prediction, remaining useful life (RUL) estimation and a rule-based maintenance scheduler. Each stage was tested by holding out one whole failure at a time. Only the anomaly detector holds up.</p>
- <div class="meta"><span>Author: Vishwaswarup Rath · <a href="https://vishwaswarup.vercel.app/" target="_blank" rel="noopener">portfolio</a></span><span>Dataset: MetroPT-3 (UCI #791)</span><span>Period: <span id="m-range"></span></span><span>Windows analysed: <span id="m-n"></span></span><span>Validation: leave-one-failure-out</span></div>
+ <h1>CompressorWatch: spotting a faulty metro air compressor from its sensors</h1>
+ <p class="lede">CompressorWatch learns what a healthy compressor looks like and raises an alert when the sensors stop looking like that. It caught nearly every documented air-leak failure in the data. We also tried to predict failures in advance and to estimate remaining life. Those did not work, and this report says so.</p>
+ <div class="meta"><span>Author: Vishwaswarup Rath · <a href="https://vishwaswarup.vercel.app/" target="_blank" rel="noopener">portfolio</a></span><span>Dataset: MetroPT-3 (UCI #791)</span><span>Period: <span id="m-range"></span></span><span>Windows analysed: <span id="m-n"></span></span></div>
  <div class="verdicts" id="verdicts"></div>
- <div class="callout"><b>Summary.</b> The autoencoder raises an alarm in nearly every window of every documented failure, but it gives meaningful advance warning for only one of the four. A classifier and an RUL model trained on the lead-up to failures did no better than chance or than a constant guess. The scheduler is therefore built around how long an anomaly persists, and treats the other two models as unproven.</div>
+ <div class="callout"><b>In plain words.</b> If the compressor is leaking, CompressorWatch notices. It does not warn you days ahead, it does not say how long the machine has left, and it also raises false alarms on perfectly healthy days. Use it as a fault alarm that tells a technician to take a look.</div>
 </div>
 
 <section class="s" id="problem">
  <h2>1 · The problem</h2>
- <p>Metro trains rely on an Air Production Unit (APU). It compresses air for brakes, doors and suspension. When it fails in service, trains come out of operation. Scheduled maintenance avoids surprises but replaces parts that are still healthy. Condition-based maintenance tries to act only when the machine shows it needs it.</p>
- <p>That needs three things from sensor data: to notice that behaviour has changed, to say whether a failure is coming, and to estimate how long is left. We ask whether each of those is achievable from the 15 sensors on the unit, and how much of it can be trusted when judged on failures the model has never seen.</p>
- <h3>Questions</h3>
+ <p>Metro trains rely on an Air Production Unit (APU). It compresses air for brakes, doors and suspension. When it fails in service, the train comes out of operation. Someone has to notice quickly that the compressor is not behaving, and the unit has 15 sensors that already describe how it behaves.</p>
+ <p>The data has no fault labels. We cannot train a model on examples of "faulty", because there are only four documented failures. So CompressorWatch is built the other way round: learn normal, and call anything that departs from normal a fault.</p>
+ <h3>What the project does</h3>
  <ul>
-  <li>Can an autoencoder trained only on normal behaviour detect failures and how early?</li>
-  <li>Can a classifier predict a failure within the next 24 hours, and which sensors drive it?</li>
-  <li>Can a regressor estimate hours remaining before failure?</li>
-  <li>Can these be combined into maintenance decisions that a planner could act on?</li>
+  <li>Learns normal compressor behaviour from healthy history only.</li>
+  <li>Scores every 10-minute window of sensor data for how unusual it is.</li>
+  <li>Turns persistent unusual behaviour into a graded alert: WATCH, SCHEDULE or URGENT.</li>
+  <li>Reports honestly how often it is right and wrong, testing on whole failures it has never seen.</li>
  </ul>
 </section>
 
 <section class="s" id="dataset">
  <h2>2 · The dataset</h2>
- <p><a href="https://archive.ics.uci.edu/dataset/791/metropt+3+dataset" target="_blank" rel="noopener">MetroPT-3</a> contains readings from an APU on a Metro do Porto train between 1 February and 1 September 2020. It has <b>1,516,948 rows</b> and <b>15 signals</b>: 8 analogue and 7 digital. The unit logs about every 10 seconds, so the sampling rate is 0.1 Hz rather than 1 Hz. There is <b>no label column</b>. Failure times come from maintenance reports published with the dataset.</p>
+ <p><a href="https://archive.ics.uci.edu/dataset/791/metropt+3+dataset" target="_blank" rel="noopener">MetroPT-3</a> contains readings from an APU on a Metro do Porto train between 1 February and 1 September 2020. It has <b>1,516,948 rows</b> and <b>15 signals</b>: 8 analogue and 7 digital. The unit logs about every 10 seconds (0.1 Hz). There is <b>no label column</b>. Failure times come from maintenance reports published with the dataset.</p>
  <div class="panel"><h4>Signals</h4><div class="scroll"><table class="txt" id="sigT"></table></div></div>
  <h3>Documented failures</h3>
- <p>Four air-leak failures are documented. All four lead-ups come after the training period, so the autoencoder never sees them.</p>
+ <p>Four air-leak failures are documented. We keep all four out of the training data so the detector is tested on faults it has never seen.</p>
  <div class="panel"><div class="scroll"><table id="failT"></table></div></div>
  <h3>Data quirks that shaped the design</h3>
  <ul>
-  <li><b>Logging gaps.</b> The compressor idles for long stretches and nothing is logged. Short gaps (up to 30 s) are forward-filled. Longer ones stay missing and no window may cross them.</li>
+  <li><b>Logging gaps.</b> The compressor idles for long stretches and nothing is logged. Short gaps (up to 30 s) are filled. Longer ones stay missing and no window may cross them.</li>
   <li><b>Flat-lined sensor.</b> The TP3 pressure sensor is stuck on 27 May, 23 June and 24 June. Those days are masked everywhere.</li>
   <li><b>Undocumented anomaly on 29 March.</b> Kept out of training and reported separately.</li>
-  <li><b>Drift.</b> Operating behaviour shifts over the months, most visibly in August. This turns out to matter for everything that follows.</li>
+  <li><b>Drift.</b> Normal behaviour shifts over the months, most visibly in August. This is the main source of false alarms.</li>
  </ul>
  <figure><div class="img"><img src="assets/eda_analog_overview.png" alt="Overview of the analogue sensors over the whole period" loading="lazy"></div><figcaption>Analogue sensors over the full period. Gaps are visible where the compressor idles.</figcaption></figure>
  <div class="cols">
@@ -66,92 +66,95 @@
  <h2>3 · Method</h2>
  <div class="flow">
   <div><b>Resample</b>Exact 10 s grid. Short gaps filled, long ones flagged.</div>
-  <div><b>Window</b>60 samples (10 min), stride 6 (1 min). Windows touching a gap are dropped.<small>MinMax scaler fit on training data only</small></div>
-  <div><b>Autoencoder</b>LSTM 64→32→32→64. Trained on normal data up to 14 Apr.<small>alarm = error &gt; mean + 3σ</small></div>
-  <div><b>Classifier</b>XGBoost on window statistics plus reconstruction error. Label: failure within 24 h.</div>
-  <div><b>RUL</b>Gradient boosting. Target falls linearly from 72 h to 0 at failure.</div>
-  <div class="no"><b>Scheduler</b>Rules and a risk matrix. Driven by anomaly persistence.</div>
+  <div><b>Window</b>60 samples (10 min), stride 6 (1 min). Windows touching a gap are dropped.<small>scaler fit on training data only</small></div>
+  <div><b>Autoencoder</b>LSTM 64→32→32→64 trained on normal data up to 14 Apr.<small>unusual = error &gt; mean + 3σ</small></div>
+  <div class="no"><b>Alert levels</b>Rules based on how long the unusual behaviour lasts.</div>
  </div>
- <h3>Anomaly detection</h3>
- <p>An LSTM autoencoder learns to reconstruct 10-minute windows of normal operation. It trains on <b>69,606 windows</b> from 1 Feb to 14 Apr 2020, with 29 March excluded. The cut-off is 72 hours before the first failure, so no failure lead-up is in training. An 80/20 chronological split gives training and validation sets. Training stopped after <span id="ae-ep"></span> epochs, and the best epoch was <span id="ae-best"></span>. A window is anomalous when its reconstruction error exceeds the training mean plus three standard deviations (<span class="mono" id="thr"></span>).</p>
- <h3>Failure classifier and RUL</h3>
- <p>Each window is summarised by mean, standard deviation, minimum, maximum and skew of each sensor, plus the autoencoder error: 76 features. XGBoost predicts whether a failure begins within 24 hours, with SHAP used to explain it. The RUL model predicts hours to failure inside a 72-hour zone, with the target capped at 72 h and falling linearly to zero.</p>
- <h3>Validation: leave-one-failure-out</h3>
- <p>Ordinary random splits would put minutes-apart, near-identical windows in both train and test. We instead split the timeline into four blocks, each holding exactly one failure and its lead-up. Each model trains on three blocks and is scored on the fourth. Windows inside a failure are never used for training. The RUL model is always compared with a constant predictor, because a model that learned nothing still looks reasonable on a fixed 0–72 h scale.</p>
- <h3>Scheduler</h3>
- <p>Maintenance levels are NORMAL, WATCH, SCHEDULE_MAINTENANCE and URGENT. Likelihood (0–3) rises with how long the anomaly has persisted, and a risk matrix combines it with consequence. Section 5 explains why persistence, rather than anomaly score or model probabilities, is the driver.</p>
+ <h3>The detector</h3>
+ <p>An LSTM autoencoder is a neural network that squeezes a 10-minute window of sensor readings into a short summary and tries to rebuild it. Trained only on healthy data, it rebuilds healthy windows well and faulty ones badly. The rebuild error is the "how unusual is this" score.</p>
+ <p>It trains on <b>69,606 windows</b> from 1 Feb to 14 Apr 2020, with 29 March excluded. The cut-off is 72 hours before the first failure, so no failure is in training. Training ran for <span id="ae-ep"></span> epochs and the best was epoch <span id="ae-best"></span>. A window counts as unusual when its error exceeds the training mean plus three standard deviations, a threshold of <span class="mono" id="thr"></span>.</p>
+ <h3>How it is tested</h3>
+ <p>A random split would put near-identical windows, minutes apart, in both training and test, which flatters any model. We instead split the timeline into four blocks. Each holds exactly one failure and the days around it. A model trains on three blocks and is scored on the fourth.</p>
 </section>
 
 <section class="s" id="results">
- <h2>4 · Results</h2>
- <h3>4.1 Anomaly detector</h3>
+ <h2>4 · Results: fault detection</h2>
  <div class="panel"><h4>Anomaly score over time</h4><div class="legend" id="lg1"></div><div id="full"></div>
-  <p class="note">Score is reconstruction error divided by the threshold, so 1.0 is the alarm line. Hourly maximum on a log scale. Red bands are the four failures. The strip under the curve is the scheduler level.</p></div>
- <p>Inside the failure windows, almost every window is flagged. But healthy windows are flagged too: <b><span id="fp"></span></b> leave NORMAL, and the false-positive rate climbs sharply in August as operating behaviour drifts. Score size does not rank severity. Failure windows all sit at 1.2–1.5× the threshold, while the largest scores belong to healthy drift. More training epochs did not help (AUROC 0.577).</p>
+  <p class="note">Score is reconstruction error divided by the threshold, so 1.0 is the alarm line. Hourly maximum on a log scale. Red bands are the four failures. The strip under the curve is the alert level.</p></div>
+ <p>During the four failures, <b id="flagged"></b> of windows sit above NORMAL, and the score stays above the threshold for hours at a stretch. The detector also found the undocumented 29 March anomaly without being told about it.</p>
+ <h3>The cost: false alarms</h3>
+ <p>It is not free. <b><span id="fp"></span></b> of healthy windows also leave NORMAL, and the rate climbs sharply in August as the compressor's normal behaviour drifts. The size of the score does not tell you how bad a fault is: failure windows all sit at 1.2–1.5× the threshold, while some of the biggest scores belong to healthy drift. Training for more epochs did not improve this.</p>
  <div class="cols">
-  <div class="panel"><h4>Training loss</h4><div id="aeC"></div><div class="legend" id="lgAE"></div><p class="note">MAE loss on training and validation windows.</p></div>
+  <div class="panel"><h4>Training loss</h4><div id="aeC"></div><div class="legend" id="lgAE"></div><p class="note">Loss on training and validation windows.</p></div>
   <figure style="margin:0"><div class="img"><img src="assets/reconstruction_error.png" alt="Reconstruction error distribution and threshold" loading="lazy"></div><figcaption>Reconstruction error against the threshold.</figcaption></figure>
  </div>
  <h3>Failure inspector</h3>
  <div class="panel"><div class="tabs" id="tabs" role="group" aria-label="Select failure"></div><div class="legend" id="lg2"></div><div id="zoomScore"></div><div id="zoomRul"></div><p class="note" id="zoomNote"></p></div>
-
- <h3>4.2 Failure classifier</h3>
- <p>Held-out failures, pooled ROC-AUC is <b id="clfAuc"></b>, which is chance. Two failures look good (F2 and F3). The other two are worse than a coin flip, so the model has not learned a pattern that carries from one failure to the next.</p>
- <div class="cols">
-  <div class="panel"><h4>Per held-out failure, 24 h horizon</h4><div class="scroll"><table id="clfT"></table></div></div>
-  <div class="panel"><h4>ROC-AUC by lookahead horizon</h4><div id="sweepC"></div><p class="note">Shorter or longer horizons do not rescue it. AUC stays at or below 0.53.</p></div>
- </div>
- <div class="cols" style="margin-top:16px">
-  <div class="panel"><h4>Drift-robust features</h4><div class="scroll"><table id="driftT"></table></div><p class="note">The suspicion was that absolute levels drift, so we tried features relative to a trailing 24 h baseline. Pooled ROC-AUC at 24 h got worse, so the experiment was stopped.</p></div>
-  <div class="panel"><h4>Top SHAP features</h4><div id="shap"></div><p class="note">What the model leaned on, not what causes failures. With no out-of-sample skill, treat as a description of the model. Reconstruction error added nothing.</p></div>
- </div>
-
- <h3>4.3 Remaining useful life</h3>
- <div class="panel"><div class="scroll"><table id="rulT"></table></div>
- <p class="note">Pooled MAE is <b id="rulMae"></b> against <b id="rulBase"></b> for always guessing the training mean. The model wins only on F4. On windows inside failures (true RUL 0) it predicts about 21 h on average, and on healthy windows about 33 h.</p></div>
 </section>
 
-<section class="s" id="scheduler">
- <h2>5 · Maintenance scheduler</h2>
- <p>Because the classifier and RUL model have no skill, the scheduler cannot rely on them. It uses the one signal that works, the anomaly flag. A flag counts once five consecutive windows (5 min) exceed the threshold. Then likelihood rises with how long it lasts: possible, then likely after 60 min, almost certain after 240 min. A risk matrix multiplies likelihood by consequence, fixed at <i>major</i> for an air leak.</p>
- <p>Classifier probability and RUL can add one likelihood step to an active anomaly, but that option is switched off. When enabled, false SCHEDULE-or-higher episodes rose from 34 to 150 with only modest gains in lead time.</p>
+<section class="s" id="alerts">
+ <h2>5 · Alert levels</h2>
+ <p>A single unusual window is often just noise, so an alert needs persistence. The detector must flag five windows in a row (5 minutes) before anything happens. After that the level rises with how long the behaviour lasts: WATCH at once, SCHEDULE after 60 minutes and URGENT after 240. A small risk matrix combines that with a consequence level, fixed at <i>major</i> for an air leak.</p>
  <div class="cols">
   <div class="panel"><h4>Risk matrix</h4><div class="scroll"><table id="matrix"></table></div></div>
-  <div class="panel"><h4>Decision mix</h4><div id="mix"></div></div>
+  <div class="panel"><h4>Alert mix</h4><div id="mix"></div></div>
  </div>
- <div class="panel"><h4>Lead time per failure</h4><div class="scroll"><table id="leadT"></table></div>
- <p class="note">Positive = alert before the failure began. Negative = after. Only F1 gets real advance notice (about 13.6 h). F2 and F3 alerts come within about an hour after onset and F4 sits at the start. Across the period there were 34 SCHEDULE-or-higher episodes that never touched a failure.</p></div>
+ <div class="panel"><h4>When did the alert fire, relative to the logged failure start?</h4><div class="scroll"><table id="leadT"></table></div>
+ <p class="note">Positive = the alert fired before the time in the maintenance report. Negative = after. F1 was flagged 13.6 h ahead of its logged start, so a fault was probably already developing. For F2 and F3 the alert fired about an hour after the logged start, and F4 fired at the start. These are detection times, and the logged start is only the maintenance report's estimate. Over the whole period there were 34 SCHEDULE-or-higher alert episodes that never touched a failure.</p></div>
 </section>
 
-<section class="s" id="discussion">
- <h2>6 · Discussion</h2>
- <h3>Why prediction failed</h3>
+<section class="s" id="tried">
+ <h2>6 · What we tried that did not work</h2>
+ <p>The original plan had four parts. Two of them failed the same test the detector passed, so they are not part of CompressorWatch. They stay here because the failures are informative.</p>
+ <div class="verdicts" id="triedCards"></div>
+ <h3>Predicting a failure in the next 24 hours</h3>
+ <p>We trained an XGBoost classifier on summary statistics of each window plus the detector's score, with the label "a failure starts within 24 hours". Pooled across held-out failures, the ROC-AUC is <b id="clfAuc"></b>, which is a coin flip. Two failures look good (F2 and F3). The other two are worse than guessing, so the model learned nothing that carries from one failure to the next.</p>
+ <div class="cols">
+  <div class="panel"><h4>Per held-out failure, 24 h horizon</h4><div class="scroll"><table id="clfT"></table></div></div>
+  <div class="panel"><h4>ROC-AUC by prediction horizon</h4><div id="sweepC"></div><p class="note">Asking for 1, 3, 6, 12 or 24 hours ahead makes no difference. The dashed line is chance.</p></div>
+ </div>
+ <div class="cols" style="margin-top:16px">
+  <div class="panel"><h4>Drift-robust features</h4><div class="scroll"><table id="driftT"></table></div><p class="note">We suspected that absolute sensor levels drift, so we tried features relative to a trailing 24 h baseline. Pooled ROC-AUC at 24 h got worse, so we stopped.</p></div>
+  <div class="panel"><h4>Top SHAP features</h4><div id="shap"></div><p class="note">SHAP shows what the classifier leaned on. Because the classifier has no out-of-sample skill, this describes the model, not the causes of failure.</p></div>
+ </div>
+ <h3>Estimating remaining useful life</h3>
+ <p>A gradient-boosting model tried to estimate the hours left before a failure, inside the 72 hours leading up to it. It did worse than always answering with the average.</p>
+ <div class="panel"><div class="scroll"><table id="rulT"></table></div>
+ <p class="note">Pooled error is <b id="rulMae"></b> against <b id="rulBase"></b> for the constant guess. The model wins only on F4. Rank correlation near or below zero means its prediction does not fall as failure approaches. Inside failures (true remaining life 0) it predicts about 21 hours on average.</p></div>
+ <h3>Letting those models help the alerts</h3>
+ <p>We also tried letting the classifier probability and the RUL estimate raise the alert level. False SCHEDULE-or-higher episodes rose from 34 to 150 and the warning time barely moved. That option is off.</p>
+ <h3>Why they probably failed</h3>
  <ul>
-  <li><b>Four events.</b> Leave-one-failure-out leaves three failures to learn from. The failures also differ in length (4.5 h to 52.5 h), so there is little repeated structure.</li>
-  <li><b>Drift.</b> Operating behaviour changes across months, and a model that keys on absolute levels learns the season, not the failure.</li>
-  <li><b>Abrupt onset.</b> Air leaks may not give a gradual signature in these sensors. The detector sees the leak once it is happening, not the lead-up to it.</li>
+  <li><b>Four events.</b> Holding one out leaves three to learn from, and the failures differ in length (4.5 h to 52.5 h).</li>
+  <li><b>Drift.</b> A model keyed to absolute levels learns the season, not the fault.</li>
+  <li><b>Abrupt onset.</b> An air leak may leave no gradual signature in these sensors. The detector sees the leak once it is happening, not the lead-up.</li>
  </ul>
+</section>
+
+<section class="s" id="next">
+ <h2>7 · Limitations and next steps</h2>
  <h3>Limitations</h3>
  <ul>
-  <li>The false-alarm rate is high: around one in five healthy windows leaves NORMAL, mostly through drift.</li>
-  <li>Thresholds (60 and 240 min, risk cut-offs) were set by looking at these four failures, so the lead-time numbers are optimistic.</li>
-  <li>The 24 h and 72 h horizons are choices, not tuned values. The sweep shows the result is not sensitive to the first.</li>
-  <li>The consequence class is a configured constant, not derived from cost data.</li>
+  <li>Around one in five healthy windows leaves NORMAL, mostly through drift. That is too many for dispatching crews on every alert.</li>
+  <li>The 60 and 240 minute thresholds were chosen while looking at these four failures, so the timing results are optimistic.</li>
+  <li>Everything rests on four failures from one compressor in one year. It has not been tested on another train.</li>
+  <li>No simple rule (for example "pressure outside its normal range for an hour") has been compared against the neural network yet.</li>
  </ul>
- <h3>What would help</h3>
+ <h3>What we would build next</h3>
  <ul>
-  <li>Handle drift directly, for example by periodically refitting the scaler and threshold or detecting regime changes.</li>
-  <li>Compare against the sparse autoencoder and variational autoencoder from the reference paper, and add its low-pass filter on the detector output.</li>
-  <li>Separate analogue-only and digital-only detectors, as the paper does, since it finds air leaks show up in analogue signals.</li>
-  <li>More failure events, or data from other trains.</li>
+  <li><b>Say which sensor is off.</b> Split the reconstruction error by sensor so each alert reads "TP3 and motor current are abnormal". This is the most useful upgrade for a technician.</li>
+  <li><b>Handle drift.</b> Refit the baseline on a rolling window, or detect when the machine has moved to a new normal, to bring the false alarms down.</li>
+  <li><b>Sensor-health check.</b> A rule that catches a stuck sensor, like the flat-lined TP3 days that were found by hand.</li>
+  <li><b>Add a simple baseline.</b> If a plain rule matches the autoencoder, say so.</li>
+  <li><b>Try the reference paper's design.</b> A sparse autoencoder, a low-pass filter on its output, and separate analogue and digital detectors.</li>
  </ul>
 </section>
 
 <section class="s" id="conclusion">
- <h2>7 · Conclusion</h2>
- <div class="callout ok"><b>What works.</b> An LSTM autoencoder trained on pre-failure normal data flags the documented air-leak failures and the undocumented 29 March anomaly. It can drive a maintenance alert once an anomaly persists.</div>
- <div class="callout"><b>What does not.</b> On this data we could not predict a failure ahead of time, and we could not estimate time to failure. Both fall to chance or below under leave-one-failure-out validation. The scheduler therefore delivers mostly late alerts, with advance notice on one failure out of four.</div>
- <p>The useful result is the method as much as the model: validate on whole held-out failures, compare against a constant baseline, and report the negative results. They changed the design of the scheduler, which would otherwise have trusted two models that cannot be trusted.</p>
+ <h2>8 · Conclusion</h2>
+ <div class="callout ok"><b>What CompressorWatch is.</b> A fault detector. Trained only on healthy history, it flags nearly every window of the documented air-leak failures and also surfaced an anomaly nobody had labelled.</div>
+ <div class="callout"><b>What it is not.</b> It is not a predictor. On this data, forecasting a failure and estimating remaining life both fell to chance or below when tested on failures the models had not seen, so we removed them from the product.</div>
+ <p>The most useful habit in this project was the test, not the model: hold out a whole failure, compare against a naive baseline, and report what fails. That test is why the page describes a fault alarm and not a crystal ball.</p>
 </section>
 
 <section class="s" id="refs">
@@ -160,8 +163,8 @@
  Study of the APU of a Metro do Porto train using a sparse autoencoder (SAE) on analogue and digital sensors, with a low-pass filter on the output and a variational autoencoder for comparison. Reported SAE results beat the VAE by 14% (recall), 77% (precision) and 37% (F1). Abstract held in the repository at <span class="mono">docs/researchpaper.txt</span>.</p>
  <p class="ref"><b>MetroPT-3 Dataset.</b> UCI Machine Learning Repository, dataset 791. <a href="https://archive.ics.uci.edu/dataset/791/metropt+3+dataset" target="_blank" rel="noopener">archive.ics.uci.edu/dataset/791</a></p>
  <h3>Reproducing</h3>
- <p>Code, configuration and saved models are in the project repository. Every threshold and hyperparameter is in <span class="mono">config.py</span>. The pipeline runs with <span class="mono">python main.py</span> after training the autoencoder with <span class="mono">python -m src.models.autoencoder</span>.</p>
- <footer><b>CompressorWatch</b> by <b>Vishwaswarup Rath</b> · Predictive maintenance on MetroPT-3. More projects at <a href="https://vishwaswarup.vercel.app/" target="_blank" rel="noopener">vishwaswarup.vercel.app</a>.<br>This page is a static report. The numbers are a snapshot of the pipeline outputs and do not update when the pipeline is re-run.</footer>
+ <p>Code, configuration and saved models are in the project repository. Every threshold and hyperparameter is in <span class="mono">config.py</span>. Train the detector with <span class="mono">python -m src.models.autoencoder</span> and run the rest with <span class="mono">python main.py</span>.</p>
+ <footer><b>CompressorWatch</b> by <b>Vishwaswarup Rath</b> · Fault detection on MetroPT-3. More projects at <a href="https://vishwaswarup.vercel.app/" target="_blank" rel="noopener">vishwaswarup.vercel.app</a>.<br>This page is a static report. The numbers are a snapshot of the pipeline outputs and do not update when the pipeline is re-run.</footer>
 </section>
 </main>
 </div>

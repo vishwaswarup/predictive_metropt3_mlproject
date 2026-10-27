@@ -10,13 +10,19 @@ set("ae-ep",D.ae.epochs);set("ae-best",D.ae.best);set("thr",D.threshold.toFixed(
 
 /* verdict cards */
 const C=D.clf.pooled,R=D.rul.pooled,skill=(1-R.mae/R.baseline_mae)*100;
-const flagged=(100-D.mix.failure[0]).toFixed(0),leave=(100-D.mix.healthy[0]).toFixed(0);
-set("fp",leave+"% of healthy windows");
+const flagged=(100-D.mix.failure[0]).toFixed(1),leave=(100-D.mix.healthy[0]).toFixed(0);
+set("fp",leave+"% of healthy windows");set("flagged",flagged+"%");
+const card=c=>`<div class="v"><div class="top"><b>${c[0]}</b>${c[1]}</div><div class="big">${c[2]}</div><div>${c[3]}</div><small>${c[4]}</small></div>`;
 el("verdicts").innerHTML=[
- ["Anomaly detector",`<span class="pill ok">works</span>`,flagged+"%","of in-failure windows raise an alarm",`${leave}% of healthy windows also leave NORMAL.`],
- ["Failure classifier",`<span class="pill bad">no skill</span>`,C.roc_auc.toFixed(2),"pooled ROC-AUC (0.50 = chance)",`F1 ${C.f1.toFixed(2)}, precision ${C.precision.toFixed(2)}, recall ${C.recall.toFixed(2)}.`],
- ["RUL estimator",`<span class="pill bad">no skill</span>`,(skill>0?"+":"")+skill.toFixed(0)+"%","error vs a constant guess",`MAE ${R.mae.toFixed(1)} h vs ${R.baseline_mae.toFixed(1)} h for the baseline.`]
-].map(c=>`<div class="v"><div class="top"><b>${c[0]}</b>${c[1]}</div><div class="big">${c[2]}</div><div>${c[3]}</div><small>${c[4]}</small></div>`).join("");
+ ["Fault detector",`<span class="pill ok">works</span>`,flagged+"%","of windows during failures are flagged",`Cost: ${leave}% of healthy windows are flagged too.`],
+ ["Failure prediction",`<span class="pill bad">dropped</span>`,C.roc_auc.toFixed(2),"ROC-AUC on unseen failures (0.50 = chance)","Tried, did not work. See section 6."],
+ ["Remaining life",`<span class="pill bad">dropped</span>`,(skill>0?"+":"")+skill.toFixed(0)+"%","error vs a constant guess","Tried, did not work. See section 6."]
+].map(card).join("");
+el("triedCards").innerHTML=[
+ ["Failure prediction",`<span class="pill bad">chance level</span>`,C.roc_auc.toFixed(2),"pooled ROC-AUC",`F1 ${C.f1.toFixed(2)}, precision ${C.precision.toFixed(2)}, recall ${C.recall.toFixed(2)}.`],
+ ["Remaining life",`<span class="pill bad">worse than average</span>`,R.mae.toFixed(1)+" h",`error vs ${R.baseline_mae.toFixed(1)} h for a constant guess`,"Beat the constant on only 1 of 4 failures."],
+ ["Model-assisted alerts",`<span class="pill bad">more false alarms</span>`,"34 → 150","false SCHEDULE+ episodes","Switched off."]
+].map(card).join("");
 set("clfAuc",C.roc_auc.toFixed(2));set("rulMae",R.mae.toFixed(1)+" h");set("rulBase",R.baseline_mae.toFixed(1)+" h");
 
 /* static tables */
@@ -86,7 +92,7 @@ function drawZoom(){
  el("zoomScore").innerHTML=scoreChart(z,{h:210,step:6*3600e3,fmt:hr,label:"Anomaly score around failure"});
  el("zoomRul").innerHTML=rulChart(z);
  const s=D.summary[cur],lead=s.first_SCHEDULE_h_before_start;
- el("zoomNote").textContent=`Failure ${s.failure} starts ${z.start.replace("T"," ")}. `+(lead==null?"The scheduler never reached SCHEDULE_MAINTENANCE in this period.":lead>0?`SCHEDULE_MAINTENANCE was reached ${lead.toFixed(1)} h before it started.`:`SCHEDULE_MAINTENANCE was reached ${Math.abs(lead).toFixed(1)} h after it started.`)+" Lower chart: predicted RUL (blue) against true RUL (black), shown only inside the 72 h pre-failure zone.";
+ el("zoomNote").textContent=`Failure ${s.failure} starts ${z.start.replace("T"," ")}. `+(lead==null?"No SCHEDULE alert fired in this period.":lead>0?`The SCHEDULE alert fired ${lead.toFixed(1)} h before the logged start.`:`The SCHEDULE alert fired ${Math.abs(lead).toFixed(1)} h after the logged start.`)+" Lower chart: the dropped remaining-life model (blue) against the true value (black), kept to show why it was dropped.";
  [...el("tabs").children].forEach((b,i)=>b.setAttribute("aria-pressed",i===cur));
 }
 el("tabs").innerHTML=D.zoom.map((z,i)=>`<button type="button" data-i="${i}">F${i+1} · ${z.start.slice(0,10)}</button>`).join("");
@@ -104,14 +110,14 @@ el("driftT").innerHTML=hd(["Feature set",...hs.map(h=>h+"h")])+dv.map(([k,n])=>`
 const mx=Math.max(...D.shap.map(s=>s.mean_abs_shap));
 el("shap").innerHTML=D.shap.map(s=>`<div class="bar"><span title="${s.feature}">${s.feature}</span><span class="t"><i style="width:${s.mean_abs_shap/mx*100}%"></i></span><span>${s.mean_abs_shap.toFixed(2)}</span></div>`).join("");
 
-el("leadT").innerHTML=hd(["Failure","Schedule (h before)","Urgent (h before)","24 h before ≥ SCHEDULE","During ≥ SCHEDULE"])+
+el("leadT").innerHTML=hd(["Failure","SCHEDULE alert (h vs start)","URGENT alert (h vs start)","Share of final 24 h pre-start at SCHEDULE+","Share of failure at SCHEDULE+"])+
  D.summary.map(s=>{const c=v=>v==null?'<td class="m dim">never</td>':`<td class="m ${v>0?"pos":"neg"}">${v>0?"+":""}${v.toFixed(1)}</td>`;
  return`<tr><td>${s.failure}</td>${c(s.first_SCHEDULE_h_before_start)}${c(s.first_URGENT_h_before_start)}<td class="m">${(s.pre24h_ge_SCHEDULE*100).toFixed(0)}%</td><td class="m">${(s.in_failure_ge_SCHEDULE*100).toFixed(0)}%</td></tr>`}).join("");
 el("mix").innerHTML=[["Healthy windows",D.mix.healthy],["In-failure windows",D.mix.failure]].map(([n,m])=>
  `<div style="margin:6px 0 12px"><div class="mono" style="margin-bottom:4px;background:none;padding:0">${n}</div>
  <div style="display:flex;height:22px;border-radius:3px;overflow:hidden;background:var(--chip)">${m.map((v,i)=>`<div title="${LV[i]} ${v}%" style="width:${v}%;background:var(${LC[i]});opacity:${i?1:.35}"></div>`).join("")}</div>
  <div class="legend">${m.map((v,i)=>`<span><i style="background:var(${LC[i]})"></i>${LV[i]} ${v.toFixed(1)}%</span>`).join("")}</div></div>`).join("")+
- '<p class="note">Healthy windows should be NORMAL. The share that is not is the false-alarm cost of the detector.</p>';
+ '<p class="note">Healthy windows should be NORMAL. The share that is not is the false-alarm cost.</p>';
 const M=D.matrix,LI={NORMAL:0,WATCH:1,SCHEDULE_MAINTENANCE:2,URGENT:3};
 el("matrix").innerHTML=hd(["Likelihood \\ consequence",...M.cols])+M.rows.map((r,i)=>`<tr><td>${r}</td>${M.cells[i].map(c=>`<td class="cell L${LI[c]}">${c.replace("_MAINTENANCE","")}</td>`).join("")}</tr>`).join("");
 
