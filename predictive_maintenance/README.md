@@ -1,4 +1,6 @@
-# MetroPT-3 Predictive Maintenance
+# CompressorWatch
+
+Predictive maintenance for the MetroPT-3 metro air compressor.
 
 Modular, interpretable pipeline for the metro Air Production Unit (compressor), built on the
 [MetroPT-3 dataset](https://archive.ics.uci.edu/dataset/791/metropt+3+dataset):

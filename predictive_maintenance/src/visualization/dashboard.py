@@ -85,7 +85,7 @@ def build_dashboard(grid: pd.DataFrame, score: pd.Series, decisions: pd.DataFram
         for sh in _failure_shapes(failure_windows):
             shapes.append({**sh, "xref": "x" if k == 1 else f"x{k}"})
     fig.update_layout(height=230 * rows, shapes=shapes, template="plotly_white", margin=dict(l=60, r=20, t=50, b=30),
-                      title="MetroPT-3 predictive maintenance (red bands = documented failures)")
+                      title="CompressorWatch · MetroPT-3 (red bands = documented failures)")
     Path(path).parent.mkdir(parents=True, exist_ok=True)
     fig.write_html(path, include_plotlyjs="cdn")
     return Path(path)

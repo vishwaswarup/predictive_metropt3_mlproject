@@ -12,6 +12,7 @@ body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.65 var(--sans)}
 a{color:var(--acc)}
 .shell{display:grid;grid-template-columns:210px minmax(0,1fr);gap:48px;max-width:1220px;margin:0 auto;padding:0 max(20px,env(safe-area-inset-right,0px)) 80px max(20px,env(safe-area-inset-left,0px))}
 nav.toc{position:sticky;top:0;align-self:start;padding-top:36px;font:500 13px var(--mono);display:flex;flex-direction:column;gap:2px;max-height:100vh;overflow:auto}
+nav.toc .brand{font:600 17px var(--cond);letter-spacing:.04em;color:var(--fg);margin-bottom:14px}
 nav.toc b{font:600 12px var(--cond);letter-spacing:.1em;text-transform:uppercase;color:var(--mut);margin-bottom:8px}
 nav.toc a{color:var(--mut);text-decoration:none;padding:4px 0 4px 10px;border-left:2px solid var(--line)}
 nav.toc a:hover,nav.toc a.on{color:var(--fg);border-left-color:var(--acc)}
@@ -78,7 +79,7 @@ footer{margin-top:70px;padding-top:20px;border-top:1px solid var(--line);color:v
 @media (max-width:900px){
  .shell{grid-template-columns:minmax(0,1fr);gap:0}
  nav.toc{position:sticky;top:0;z-index:5;flex-direction:row;overflow-x:auto;padding:8px 0;background:var(--bg);border-bottom:1px solid var(--line);max-height:none;white-space:nowrap}
- nav.toc b{display:none}nav.toc a{border-left:0;border-bottom:2px solid transparent;padding:4px 8px}
+ nav.toc b{display:none}nav.toc .brand{display:none}nav.toc a{border-left:0;border-bottom:2px solid transparent;padding:4px 8px}
  nav.toc a:hover,nav.toc a.on{border-bottom-color:var(--acc)}
  html{scroll-padding-top:60px}
 }

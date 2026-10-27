@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>Predictive Maintenance on MetroPT-3 — Project Report</title>
-<meta name="description" content="Report on anomaly detection, failure prediction, RUL estimation and maintenance scheduling for a metro air compressor, with honest validation results.">
+<title>CompressorWatch — Predictive Maintenance Report</title>
+<meta name="description" content="CompressorWatch: report on anomaly detection, failure prediction, RUL estimation and maintenance scheduling for a metro air compressor, with honest validation results.">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Sans+Condensed:wght@600&display=swap">
 <link rel="stylesheet" href="style.css">
@@ -12,6 +12,7 @@
 <body>
 <div class="shell">
 <nav class="toc" aria-label="Sections">
+ <span class="brand">CompressorWatch</span>
  <b>Contents</b>
  <a href="#summary">Summary</a><a href="#problem">1 Problem</a><a href="#dataset">2 Dataset</a><a href="#method">3 Method</a>
  <a href="#results">4 Results</a><a href="#scheduler">5 Scheduler</a><a href="#discussion">6 Discussion</a><a href="#conclusion">7 Conclusion</a><a href="#refs">References</a>
@@ -19,7 +20,7 @@
 <main>
 
 <div class="hero" id="summary">
- <div class="eyebrow">Project report · Predictive maintenance · By Vishwaswarup Rath</div>
+ <div class="eyebrow">CompressorWatch · Project report · By Vishwaswarup Rath</div>
  <h1>Predicting failures of a metro air compressor, and what the data would not let us predict</h1>
  <p class="lede">We built a four-stage pipeline on the MetroPT-3 dataset: anomaly detection, failure prediction, remaining useful life (RUL) estimation and a rule-based maintenance scheduler. Each stage was tested by holding out one whole failure at a time. Only the anomaly detector holds up.</p>
  <div class="meta"><span>Author: Vishwaswarup Rath · <a href="https://vishwaswarup.vercel.app/" target="_blank" rel="noopener">portfolio</a></span><span>Dataset: MetroPT-3 (UCI #791)</span><span>Period: <span id="m-range"></span></span><span>Windows analysed: <span id="m-n"></span></span><span>Validation: leave-one-failure-out</span></div>
@@ -160,7 +161,7 @@
  <p class="ref"><b>MetroPT-3 Dataset.</b> UCI Machine Learning Repository, dataset 791. <a href="https://archive.ics.uci.edu/dataset/791/metropt+3+dataset" target="_blank" rel="noopener">archive.ics.uci.edu/dataset/791</a></p>
  <h3>Reproducing</h3>
  <p>Code, configuration and saved models are in the project repository. Every threshold and hyperparameter is in <span class="mono">config.py</span>. The pipeline runs with <span class="mono">python main.py</span> after training the autoencoder with <span class="mono">python -m src.models.autoencoder</span>.</p>
- <footer><b>Vishwaswarup Rath</b> · Predictive maintenance on MetroPT-3. More projects at <a href="https://vishwaswarup.vercel.app/" target="_blank" rel="noopener">vishwaswarup.vercel.app</a>.<br>This page is a static report. The numbers are a snapshot of the pipeline outputs and do not update when the pipeline is re-run.</footer>
+ <footer><b>CompressorWatch</b> by <b>Vishwaswarup Rath</b> · Predictive maintenance on MetroPT-3. More projects at <a href="https://vishwaswarup.vercel.app/" target="_blank" rel="noopener">vishwaswarup.vercel.app</a>.<br>This page is a static report. The numbers are a snapshot of the pipeline outputs and do not update when the pipeline is re-run.</footer>
 </section>
 </main>
 </div>
