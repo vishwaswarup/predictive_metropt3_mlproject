@@ -19,10 +19,10 @@
 <main>
 
 <div class="hero" id="summary">
- <div class="eyebrow">Project report · Predictive maintenance</div>
+ <div class="eyebrow">Project report · Predictive maintenance · By Vishwaswarup Rath</div>
  <h1>Predicting failures of a metro air compressor, and what the data would not let us predict</h1>
  <p class="lede">We built a four-stage pipeline on the MetroPT-3 dataset: anomaly detection, failure prediction, remaining useful life (RUL) estimation and a rule-based maintenance scheduler. Each stage was tested by holding out one whole failure at a time. Only the anomaly detector holds up.</p>
- <div class="meta"><span>Dataset: MetroPT-3 (UCI #791)</span><span>Period: <span id="m-range"></span></span><span>Windows analysed: <span id="m-n"></span></span><span>Validation: leave-one-failure-out</span></div>
+ <div class="meta"><span>Author: Vishwaswarup Rath</span><span>Dataset: MetroPT-3 (UCI #791)</span><span>Period: <span id="m-range"></span></span><span>Windows analysed: <span id="m-n"></span></span><span>Validation: leave-one-failure-out</span></div>
  <div class="verdicts" id="verdicts"></div>
  <div class="callout"><b>Summary.</b> The autoencoder raises an alarm in nearly every window of every documented failure, but it gives meaningful advance warning for only one of the four. A classifier and an RUL model trained on the lead-up to failures did no better than chance or than a constant guess. The scheduler is therefore built around how long an anomaly persists, and treats the other two models as unproven.</div>
 </div>
@@ -160,7 +160,7 @@
  <p class="ref"><b>MetroPT-3 Dataset.</b> UCI Machine Learning Repository, dataset 791. <a href="https://archive.ics.uci.edu/dataset/791/metropt+3+dataset" target="_blank" rel="noopener">archive.ics.uci.edu/dataset/791</a></p>
  <h3>Reproducing</h3>
  <p>Code, configuration and saved models are in the project repository. Every threshold and hyperparameter is in <span class="mono">config.py</span>. The pipeline runs with <span class="mono">python main.py</span> after training the autoencoder with <span class="mono">python -m src.models.autoencoder</span>.</p>
- <footer>This page is a static report. The numbers are a snapshot of the pipeline outputs and do not update when the pipeline is re-run.</footer>
+ <footer><b>Vishwaswarup Rath</b> · Predictive maintenance on MetroPT-3.<br>This page is a static report. The numbers are a snapshot of the pipeline outputs and do not update when the pipeline is re-run.</footer>
 </section>
 </main>
 </div>
